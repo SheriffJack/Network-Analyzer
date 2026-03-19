@@ -84,7 +84,7 @@ def run_download():
 
 
 # Schedule download every hour
-schedule.every(1).minutes.do(run_download)
+schedule.every(1).hour.do(run_download)
 
 # For testing/demo you can temporarily use:
 # schedule.every(1).minutes.do(run_download)
