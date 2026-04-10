@@ -1,98 +1,91 @@
 import socket
+import ssl
 import time
-import os
 import csv
 import schedule
 from datetime import datetime
+import os
 
-SERVER_IP = "127.0.0.1"
-PORT = 5001
-BUFFER_SIZE = 1024
-
-DOWNLOAD_FILE = "downloaded.bin"
-LOG_FILE = "network_log.csv"
+SERVER_HOST = "127.0.0.1"
+SERVER_PORT = 5001
+OUTPUT_FILE = "downloaded_file.bin"
+CSV_FILE = "network_log.csv"
 
 
 def download_file():
 
-    # Socket creation
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        start_time = time.time()
 
-    # Connect to server
-    client_socket.connect((SERVER_IP, PORT))
+        # TCP socket
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    start_time = time.time()
+        # SSL context
+        context = ssl.create_default_context()
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
 
-    with open(DOWNLOAD_FILE, "wb") as f:
+        secure_sock = context.wrap_socket(sock)
 
-        while True:
+        secure_sock.connect((SERVER_HOST, SERVER_PORT))
 
-            # Receive data from server
-            data = client_socket.recv(BUFFER_SIZE)
+        total_bytes = 0
 
-            if not data:
-                break
+        with open(OUTPUT_FILE, "wb") as f:
+            while True:
+                data = secure_sock.recv(4096)
+                if not data:
+                    break
+                f.write(data)
+                total_bytes += len(data)
 
-            f.write(data)
+        end_time = time.time()
+        secure_sock.close()
 
-    end_time = time.time()
+        duration = end_time - start_time
+        speed = total_bytes / duration / (1024 * 1024)
 
-    client_socket.close()
+        print(f"\n[{datetime.now()}]")
+        print(f"Downloaded {total_bytes} bytes")
+        print(f"Time: {duration:.2f} sec")
+        print(f"Speed: {speed:.2f} MB/s")
 
-    return end_time - start_time
+        log_result(duration, speed)
 
-
-def calculate_speed(time_taken):
-
-    file_size_mb = os.path.getsize(DOWNLOAD_FILE) / (1024 * 1024)
-
-    speed = file_size_mb / time_taken
-
-    return file_size_mb, speed
+    except Exception as e:
+        print("Download failed:", e)
 
 
-def log_results(hour, size, time_taken, speed):
+def log_result(duration, speed):
 
-    file_exists = os.path.isfile(LOG_FILE)
+    file_exists = os.path.isfile(CSV_FILE)
 
-    with open(LOG_FILE, "a", newline="") as file:
+    with open(CSV_FILE, "a", newline="") as f:
+        writer = csv.writer(f)
 
-        writer = csv.writer(file)
-
-        # Write header only once
         if not file_exists:
-            writer.writerow(["Hour", "Size_MB", "Time_sec", "Speed_MBps"])
+            writer.writerow(["Time", "Duration_sec", "Speed_MBps"])
 
-        writer.writerow([hour, size, time_taken, speed])
+        writer.writerow([
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            duration,
+            speed
+        ])
 
 
-def run_download():
-
+def job():
     print("\nStarting scheduled download...")
-
-    time_taken = download_file()
-
-    size, speed = calculate_speed(time_taken)
-
-    hour = datetime.now().strftime("%H:%M")
-
-    log_results(hour, size, time_taken, speed)
-
-    print("Download complete")
-    print("Time:", round(time_taken, 2), "seconds")
-    print("Speed:", round(speed, 2), "MB/s")
+    download_file()
 
 
-# Schedule download every hour
-schedule.every(1).minutes.do(run_download)
+#FOR DEMO
+schedule.every(1).minutes.do(job)
 
-# For testing/demo you can temporarily use:
-# schedule.every(1).minutes.do(run_download)
+# For actual requirement:
+# schedule.every().hour.do(job)
 
-print("Network analyzer running...")
+print("SSL Network Analyzer Running...")
 
 while True:
-
     schedule.run_pending()
-
     time.sleep(1)
