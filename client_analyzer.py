@@ -78,8 +78,13 @@ def job():
     download_file()
 
 
+<<<<<<< HEAD
 #FOR DEMO
 schedule.every(1).minutes.do(job)
+=======
+# Schedule download every hour
+schedule.every(1).hour.do(run_download)
+>>>>>>> 9d135f6aa0d7b7d4978bbab32430fce7d7e33f6f
 
 # For actual requirement:
 # schedule.every().hour.do(job)
@@ -88,4 +93,9 @@ print("SSL Network Analyzer Running...")
 
 while True:
     schedule.run_pending()
+<<<<<<< HEAD
     time.sleep(1)
+=======
+
+    time.sleep(1)
+>>>>>>> 9d135f6aa0d7b7d4978bbab32430fce7d7e33f6f
