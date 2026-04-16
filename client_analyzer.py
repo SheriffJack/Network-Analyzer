@@ -56,20 +56,14 @@ def download_file():
         print("Download failed:", e)
 
 
-def log_result(duration, speed):
-
-    file_exists = os.path.isfile(CSV_FILE)
-
+def log_result(duration, speed, total_bytes):
     with open(CSV_FILE, "a", newline="") as f:
         writer = csv.writer(f)
-
-        if not file_exists:
-            writer.writerow(["Time", "Duration_sec", "Speed_MBps"])
-
         writer.writerow([
             datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            duration,
-            speed
+            round(total_bytes / (1024*1024), 4),  # Size in MB
+            round(duration, 4),
+            round(speed, 4)
         ])
 
 
@@ -78,13 +72,8 @@ def job():
     download_file()
 
 
-<<<<<<< HEAD
 #FOR DEMO
 schedule.every(1).minutes.do(job)
-=======
-# Schedule download every hour
-schedule.every(1).hour.do(run_download)
->>>>>>> 9d135f6aa0d7b7d4978bbab32430fce7d7e33f6f
 
 # For actual requirement:
 # schedule.every().hour.do(job)
@@ -93,9 +82,4 @@ print("SSL Network Analyzer Running...")
 
 while True:
     schedule.run_pending()
-<<<<<<< HEAD
     time.sleep(1)
-=======
-
-    time.sleep(1)
->>>>>>> 9d135f6aa0d7b7d4978bbab32430fce7d7e33f6f
